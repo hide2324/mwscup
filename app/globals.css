@@ -1,26 +1,398 @@
-@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Zen+Old+Mincho:wght@400;700&display=swap');
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+:root{
+  --paper:#EDE6D3;
+  --paper-dark:#DBD0B4;
+  --paper-edge:#C8BB99;
+  --ink:#221D17;
+  --ink-soft:#4A4136;
+  --stamp-red:#9A2B25;
+  --stamp-green:#2F5D3A;
+  --gold:#A9822E;
+  --line:#B9AD8C;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:
+    radial-gradient(ellipse at top left, #5b5346 0%, #3c362c 45%, #2a251d 100%);
+  color:var(--ink);
+  font-family:"Zen Kaku Gothic New", sans-serif;
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.desk{
+  width:100%;
+  max-width:640px;
+}
+.headline{
+  font-family:"Shippori Mincho", serif;
+  color:#EDE6D3;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+.paper{
+  background:
+    repeating-linear-gradient(0deg, rgba(0,0,0,0.015) 0px, rgba(0,0,0,0.015) 1px, transparent 1px, transparent 3px),
+    var(--paper);
+  border:1px solid var(--paper-edge);
+  box-shadow: 0 18px 40px rgba(0,0,0,0.45), inset 0 0 60px rgba(120,100,60,0.06);
+  position:relative;
+}
+.paper::before{
+  content:"";
+  position:absolute; inset:0;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.35) 0%, transparent 6%),
+    linear-gradient(-45deg, rgba(0,0,0,0.05) 0%, transparent 8%);
+  pointer-events:none;
+}
+
+#screen-start .paper{
+  padding:36px 32px 28px;
+}
+#screen-start h1{
+  font-size:28px;
+  margin:0 0 6px;
+  letter-spacing:.08em;
+}
+#screen-start .sub{
+  font-size:13px;
+  color:var(--ink-soft);
+  margin:0 0 28px;
+  line-height:1.7;
+}
+.file-tabs{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+}
+.file-tab{
+  border:1px solid var(--line);
+  background:var(--paper-dark);
+  padding:16px 14px;
+  cursor:pointer;
+  text-align:left;
+  font-family:"Zen Kaku Gothic New", sans-serif;
+  position:relative;
+  transition:transform .15s ease, box-shadow .15s ease;
+}
+.file-tab::before{
+  content:"";
+  position:absolute; left:14px; top:-8px;
+  width:34px; height:8px;
+  background:var(--paper-dark);
+  border:1px solid var(--line);
+  border-bottom:none;
+}
+.file-tab:hover{ transform:translateY(-3px); box-shadow:0 8px 16px rgba(0,0,0,0.25); }
+.file-tab .lv{
+  font-family:"Shippori Mincho", serif;
+  font-size:17px;
+  font-weight:700;
+  display:block;
+  margin-bottom:4px;
+}
+.file-tab .desc{
+  font-size:12px;
+  color:var(--ink-soft);
+  display:block;
+}
+.file-tab .timer-mark{
+  display:inline-block;
+  margin-top:8px;
+  font-size:11px;
+  padding:2px 6px;
+  border:1px solid var(--stamp-red);
+  color:var(--stamp-red);
+}
+
+.status-bar{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:space-between;
+  align-items:center;
+  gap:6px 10px;
+  color:#EDE6D3;
+  font-size:13px;
+  margin-bottom:10px;
+  padding:0 4px;
+}
+.status-bar .count{
+  font-family:"Shippori Mincho", serif;
+  font-size:15px;
+}
+#timer-wrap{
+  font-variant-numeric:tabular-nums;
+}
+#timer-wrap.low{ color:var(--stamp-red); }
+.home-link{
+  background:none;
+  border:1px solid #8a8067;
+  color:#EDE6D3;
+  font-family:"Zen Kaku Gothic New", sans-serif;
+  font-size:11.5px;
+  padding:4px 8px;
+  cursor:pointer;
+}
+.home-link:hover{ background:rgba(237,230,211,0.12); }
+
+.letter-card{
+  padding:0;
+  overflow:hidden;
+}
+.letter-head{
+  background:var(--paper-dark);
+  border-bottom:1px dashed var(--line);
+  padding:16px 22px;
+  font-size:13px;
+  line-height:1.9;
+}
+.letter-head .row{ display:flex; gap:8px; }
+.letter-head .label{
+  color:var(--ink-soft);
+  min-width:56px;
+  flex-shrink:0;
+}
+.letter-head .val{
+  font-family:monospace, "Zen Kaku Gothic New";
+  word-break:break-all;
+}
+.letter-head .subject{
+  font-family:"Zen Kaku Gothic New";
+  font-weight:700;
+  font-size:15px;
+  margin-top:2px;
+}
+.letter-body{
+  padding:20px 22px 6px;
+  font-size:14.5px;
+  line-height:2;
+  white-space:pre-wrap;
+  min-height:140px;
+}
+.attachment{
+  margin:0 22px 18px;
+  padding:8px 12px;
+  background:#e4dabf;
+  border:1px solid var(--line);
+  font-family:monospace;
+  font-size:12.5px;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+}
+.attachment::before{ content:"📎"; }
+
+.choice-zone{
+  padding:16px 22px 22px;
+  border-top:1px dashed var(--line);
+}
+.choice-zone .prompt{
+  font-size:12.5px;
+  color:var(--ink-soft);
+  margin:0 0 10px;
+}
+.choices{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.choice-btn{
+  text-align:left;
+  background:#fbf8f0;
+  border:1px solid var(--line);
+  padding:10px 12px;
+  font-size:13.5px;
+  cursor:pointer;
+  font-family:"Zen Kaku Gothic New";
+  color:var(--ink);
+}
+.choice-btn:hover{ background:#f2ecd9; }
+.choice-btn.picked{
+  border-color:var(--gold);
+  background:#f4ead0;
+  box-shadow: inset 0 0 0 1px var(--gold);
+}
+
+.verdict-zone{
+  padding:18px 22px 24px;
+  border-top:1px dashed var(--line);
+  gap:16px;
+  justify-content:center;
+}
+.stamp-btn{
+  width:120px; height:120px;
+  border-radius:50%;
+  border:5px solid currentColor;
+  background:transparent;
+  font-family:"Shippori Mincho", serif;
+  font-size:22px;
+  font-weight:700;
+  cursor:pointer;
+  letter-spacing:.15em;
+  transition:transform .08s ease;
+  position:relative;
+}
+.stamp-btn:active{ transform:scale(0.9) rotate(-4deg); }
+.stamp-btn.submit{
+  width:auto;
+  height:auto;
+  min-width:180px;
+  border-radius:10px;
+  padding:16px 32px;
+  color:var(--ink);
+  border-width:3px;
+}
+.stamp-btn.submit::after{ border-radius:6px; inset:5px; }
+.stamp-btn::after{
+  content:"";
+  position:absolute; inset:6px;
+  border:1px solid currentColor;
+  border-radius:50%;
+  opacity:.5;
+}
+
+.stamp-mark{
+  position:absolute;
+  font-family:"Shippori Mincho", serif;
+  font-size:15px;
+  font-weight:700;
+  border:3px solid currentColor;
+  border-radius:50%;
+  padding:10px 14px;
+  transform:rotate(-14deg) scale(1.4);
+  opacity:0;
+  top:16px; right:22px;
+  pointer-events:none;
+  transition:opacity .15s ease, transform .35s cubic-bezier(.2,1.4,.4,1);
+}
+.stamp-mark.show{ opacity:.85; transform:rotate(-14deg) scale(1); }
+.stamp-mark.pass{ color:var(--stamp-green); }
+.stamp-mark.reject{ color:var(--stamp-red); }
+
+.loading{
+  padding:60px 20px;
+  text-align:center;
+  color:var(--ink-soft);
+  font-size:13.5px;
+}
+
+#screen-feedback{
+  display:none;
+  position:fixed; inset:0;
+  background:rgba(20,17,12,0.72);
+  align-items:center; justify-content:center;
+  z-index:10;
+  padding:20px;
+}
+#screen-feedback.show{ display:flex; }
+.fb-card{
+  max-width:480px; width:100%;
+  padding:30px 28px;
+}
+.fb-tag{
+  display:inline-block;
+  font-family:"Shippori Mincho", serif;
+  font-size:22px;
+  font-weight:700;
+  padding:4px 14px;
+  border:3px solid currentColor;
+  margin-bottom:16px;
+}
+.fb-tag.correct{ color:var(--stamp-green); }
+.fb-tag.bad{ color:var(--stamp-red); }
+.fb-reason{ font-size:14px; line-height:1.9; margin:0 0 20px; }
+.fb-reason b{ display:block; font-size:12px; color:var(--ink-soft); font-weight:500; margin-bottom:4px; }
+.next-btn{
+  display:block;
+  width:100%;
+  padding:12px;
+  background:var(--ink);
+  color:var(--paper);
+  border:none;
+  font-family:"Zen Kaku Gothic New";
+  font-size:14px;
+  letter-spacing:.05em;
+  cursor:pointer;
+}
+.next-btn:hover{ background:#3a3226; }
+
+#screen-result .paper{ padding:34px 30px; }
+#screen-result h2{
+  font-family:"Shippori Mincho", serif;
+  font-size:22px;
+  margin:0 0 4px;
+}
+#screen-result .rank{
+  font-size:12.5px;
+  color:var(--ink-soft);
+  margin:0 0 22px;
+}
+.stat-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:1px;
+  background:var(--line);
+  border:1px solid var(--line);
+  margin-bottom:24px;
+}
+.stat-cell{
+  background:var(--paper);
+  padding:14px 16px;
+}
+.stat-cell .n{
+  font-family:"Shippori Mincho", serif;
+  font-size:24px;
+  display:block;
+}
+.stat-cell .l{
+  font-size:11.5px;
+  color:var(--ink-soft);
+}
+.stat-cell.wide{ grid-column:span 2; background:#e4dabf; }
+.retry-btn{
+  width:100%;
+  padding:13px;
+  background:transparent;
+  border:1px solid var(--ink);
+  font-family:"Zen Kaku Gothic New";
+  font-size:14px;
+  cursor:pointer;
+  color:var(--ink);
+}
+.retry-btn:hover{ background:var(--paper-dark); }
+
+.api-note{
+  font-size:10.5px;
+  color:#c8bfa5;
+  text-align:center;
+  margin-top:14px;
+  line-height:1.6;
+}
+.nav-link{
+  position:fixed;
+  top:20px;
+  right:20px;
+  display:inline-block;
+  padding:9px 18px;
+  background:var(--paper-dark);
+  color:var(--ink);
+  text-decoration:none;
+  font-weight:bold;
+  font-size:13px;
+  font-family:"Zen Kaku Gothic New", sans-serif;
+  border-radius:20px;
+  border:1px solid var(--paper-edge);
+  transition:background .15s, transform .1s;
+  white-space:nowrap;
+  z-index:30;
+}
+.nav-link:hover{ background:#cfc19a; transform:translateY(-1px); }
+@media (max-width:480px){
+  .nav-link{ top:10px; right:10px; padding:7px 12px; font-size:11.5px; }
 }
