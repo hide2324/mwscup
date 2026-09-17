@@ -238,7 +238,7 @@ export default function Game() {
 
   return (
     <>
-      <a className="nav-link" href="#">教材ツールへ →</a>
+      <a className="nav-link" href="https://mwscup-mail-tool.vercel.app/">教材ツールへ →</a>
       
       <div className="desk">
         {gameState === 'start' && (
