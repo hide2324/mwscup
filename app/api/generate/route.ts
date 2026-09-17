@@ -47,7 +47,7 @@ export async function POST(request: Request) {
 }`;
 
     // 注: gemini-3.6-flashは存在しないため、現在安定して使える gemini-1.5-flash を指定しています
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
