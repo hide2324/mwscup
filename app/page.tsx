@@ -113,7 +113,7 @@ export default function Game() {
     return () => clearInterval(timerId);
   }, [gameState, timed, locked, currentLetter]);
 
-  const fetchLetter = async (targetLevel: string, currentSubjects: string[]) => {
+  const fetchLetter = async (targetLevel: string, currentSubjects: string[], isTimed = timed) => {
     setCurrentLetter(null);
     setSourceTag("");
     
@@ -132,7 +132,7 @@ export default function Game() {
       });
       setSourceTag("(API生成)");
       setCurrentLetter(letter);
-      if (timed) setTimeLeft(60);
+      if (isTimed) setTimeLeft(60);
     } catch (error) {
       console.error("[検閲官の机] API生成に失敗、予備案件を使用します:", error);
       const list = FALLBACK[targetLevel];
@@ -141,7 +141,7 @@ export default function Game() {
       fallbackIdx.current[targetLevel as keyof typeof fallbackIdx.current]++;
       setSourceTag("(予備案件)");
       setCurrentLetter(letter);
-      if (timed) setTimeLeft(60);
+      if (isTimed) setTimeLeft(60);
     }
   };
 
@@ -155,7 +155,7 @@ export default function Game() {
     setPickedChoiceId(null);
     setActionMark(null);
     setFeedback(null);
-    fetchLetter(selectedLevel, []);
+    fetchLetter(selectedLevel, [], isTimed);
   };
 
   const handleHome = () => {
