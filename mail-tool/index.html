@@ -1,0 +1,1539 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Myメール診断</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+    color: #222;
+    background: #EDE6D3;
+  }
+  header {
+    padding: 18px 24px;
+    background: #fff;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  header h1 { margin: 0 0 6px; font-size: 21px; }
+  header p { margin: 0; color: #666; font-size: 13px; }
+  .nav-link {
+    display: inline-block;
+    padding: 9px 18px;
+    background: #DBD0B4;
+    color: #333;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 13px;
+    border-radius: 20px;
+    border: 1px solid #c9bb95;
+    transition: background .15s, transform .1s;
+    white-space: nowrap;
+  }
+  .nav-link:hover { background: #cfc19a; transform: translateY(-1px); }
+  .toolbar {
+    display: grid;
+    grid-template-columns: 220px auto auto;
+    gap: 12px;
+    padding: 14px 20px;
+    background: #fff;
+    border-bottom: 1px solid #ddd;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+  .toolbar input, .toolbar select, .toolbar button {
+    height: 38px;
+    border: 1px solid #bbb;
+    border-radius: 6px;
+    padding: 0 10px;
+    background: #fff;
+  }
+  .toolbar button {
+    cursor: pointer;
+    font-weight: bold;
+  }
+  .toolbar button:disabled { opacity: .5; cursor: not-allowed; }
+  #literacyLevel, .btn-accent {
+    background: #DBD0B4;
+    border-color: #c9bb95;
+  }
+  .answer-box {
+    padding: 14px 20px;
+    background: #fff;
+    border-bottom: 1px solid #ddd;
+  }
+  .answer-box label {
+    display: block;
+    font-size: 13px;
+    color: #555;
+    margin-bottom: 6px;
+  }
+  .answer-box textarea {
+    width: 100%;
+    resize: vertical;
+    border: 1px solid #bbb;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-family: inherit;
+    font-size: 13px;
+  }
+  .answer-box textarea:disabled { background: #f5f5f5; color: #999; }
+  .main {
+    display: grid;
+    grid-template-columns: minmax(500px, 1.25fr) minmax(360px, .75fr);
+    gap: 16px;
+    padding: 16px;
+    align-items: start;
+  }
+  .panel {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .panel-title {
+    padding: 11px 14px;
+    border-bottom: 1px solid #ddd;
+    font-weight: bold;
+    background: #fafafa;
+  }
+  #mailViewer {
+    padding: 0;
+    overflow: auto;
+    max-height: calc(100vh - 160px);
+    background: #f2efe3;
+  }
+  .mail-frame-wrap {
+    margin: 20px auto;
+    max-width: 760px;
+    background: #fff;
+    box-shadow: 0 2px 10px rgba(0,0,0,.15);
+  }
+  .mail-frame-wrap iframe {
+    display: block;
+    width: 100%;
+    border: 0;
+  }
+  .cat-なりすまし { background: #ff9999; }
+  .cat-緊急性煽り { background: #ffc266; }
+  .cat-個人情報要求 { background: #ff7777; }
+  .cat-不審URL { background: #ffb38a; }
+  .cat-その他 { background: #d0b3ff; }
+  .empty {
+    color: #777;
+    padding: 50px 20px;
+    text-align: center;
+  }
+  .status {
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #666;
+    background: #fafafa;
+    border-top: 1px solid #eee;
+  }
+  .risk-score {
+    margin: 14px;
+    padding: 13px 15px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 20px;
+  }
+  .risk-high { background: #ffe0e0; color: #a00000; }
+  .risk-mid { background: #fff1cc; color: #8a5a00; }
+  .risk-low { background: #ddf5dd; color: #146314; }
+  .feedback-card {
+    margin: 0 14px 14px;
+    padding: 12px 14px;
+    background: #eef6ef;
+    border: 1px solid #cfe8d2;
+    border-radius: 8px;
+    font-size: 13px;
+  }
+  .feedback-title { font-weight: bold; margin-bottom: 8px; font-size: 15px; color: #1c6b2c; }
+  .fb-section { margin: 6px 0; }
+  .fb-section ul { margin: 4px 0 0 18px; padding: 0; }
+  .fb-comment { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #cfe8d2; }
+  .summary {
+    margin: 0 14px 14px;
+    padding: 10px 12px;
+    background: #f5f7fb;
+    border-radius: 7px;
+    font-size: 13px;
+  }
+  .flag-list { padding: 0 14px 14px; }
+  .flag-item {
+    border: 1px solid #ddd;
+    border-left: 5px solid #c55;
+    border-radius: 7px;
+    padding: 11px 12px;
+    margin: 10px 0;
+    cursor: pointer;
+    background: #fff;
+  }
+  .flag-item:hover, .flag-item.active {
+    background: #fafafa;
+    outline: 2px solid #ddd;
+  }
+  .flag-category {
+    font-weight: bold;
+    color: #a00000;
+    margin-bottom: 5px;
+  }
+  .matched {
+    margin: 7px 0;
+    padding: 7px 9px;
+    background: #f3f3f3;
+    border-radius: 5px;
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: 12px;
+    word-break: break-all;
+  }
+  .advice { margin-top: 7px; }
+  .small {
+    font-size: 11px;
+    color: #888;
+  }
+  .legend {
+    padding: 10px 14px;
+    border-top: 1px solid #eee;
+    font-size: 11px;
+    color: #666;
+  }
+  .legend span {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-right: 5px;
+  }
+  #answerBoxBeginner .small { margin-top: 4px; }
+  @media (max-width: 900px) {
+    .toolbar { grid-template-columns: 1fr; }
+    .main { grid-template-columns: 1fr; }
+    #mailViewer { max-height: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Myメール診断</h1>
+  <a class="nav-link" href="https://mwscup.vercel.app">ゲームで学ぶ →</a>
+</header>
+
+<div class="toolbar">
+  <select id="literacyLevel">
+    <option value="beginner">初学者向け説明</option>
+    <option value="advanced">上級者向け説明</option>
+  </select>
+  <button id="analyzeBtn" disabled>メール(.eml)を選択してください</button>
+</div>
+
+<div class="answer-box" id="answerBoxAdvanced">
+  <label for="userAnswer">あなたの気づき：このメールの怪しいと思う箇所と、その理由を入力してください。「診断」ボタンを押すと、診断結果とフィードバックが表示されます。</label>
+  <textarea id="userAnswer" rows="3" placeholder="例：「特別ギフトをプレゼント」という甘い誘い文句で気を引こうとしている…" disabled></textarea>
+</div>
+<div class="answer-box" id="answerBoxBeginner" style="display:none;">
+  <label>あなたの気づき：左のメール文で「怪しい」と思った文字列を、マウスでドラッグして選択（マーキング）してください（複数箇所可）<br>マーキングをもう一度クリックすると解除できます。マーキングし終えたら「診断」を押してください。</label>
+  <div class="small" id="beginnerCheckSummary">メールファイルを読み込むとチェックできるようになります。</div>
+</div>
+
+<div class="main">
+  <section class="panel">
+    <div class="panel-title">メール文</div>
+    <div id="mailViewer">
+      <div class="empty">ここにメール文が表示されます</div>
+    </div>
+    <div id="status" class="status">メール未選択</div>
+    <div class="legend">
+      <span class="cat-なりすまし">なりすまし</span>
+      <span class="cat-緊急性煽り">緊急性煽り</span>
+      <span class="cat-個人情報要求">個人情報要求</span>
+      <span class="cat-不審URL">不審URL</span>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-title">診断結果</div>
+    <div id="output">
+      <div class="empty">メールファイルを選択し、怪しい箇所とその理由を入力（またはマーキング）して「診断」を押してください。</div>
+    </div>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.4.11/purify.min.js"></script>
+<script type="module">
+
+const GEMINI_MODEL = "gemini-3.6-flash";
+
+const els = {
+  literacy: document.getElementById("literacyLevel"),
+  analyzeBtn: document.getElementById("analyzeBtn"),
+  viewer: document.getElementById("mailViewer"),
+  status: document.getElementById("status"),
+  output: document.getElementById("output"),
+  userAnswer: document.getElementById("userAnswer"),
+  answerBoxAdvanced: document.getElementById("answerBoxAdvanced"),
+  answerBoxBeginner: document.getElementById("answerBoxBeginner"),
+  beginnerCheckSummary: document.getElementById("beginnerCheckSummary")
+};
+
+let currentFile = null;
+let emailContext = null;
+let currentFlags = [];
+
+const CATEGORY_COLORS = {
+  "なりすまし": "cat-なりすまし",
+  "緊急性煽り": "cat-緊急性煽り",
+  "個人情報要求": "cat-個人情報要求",
+  "不審URL": "cat-不審URL"
+};
+
+const CATEGORY_HEX = {
+  "cat-なりすまし": "#ff9999",
+  "cat-緊急性煽り": "#ffc266",
+  "cat-個人情報要求": "#ff7777",
+  "cat-不審URL": "#ffb38a",
+  "cat-その他": "#d0b3ff"
+};
+
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = String(str ?? "");
+  return div.innerHTML;
+}
+
+function textToHtml(text) {
+  return escapeHtml(text).replace(/\r?\n/g, "<br>");
+}
+
+function setStatus(message) {
+  els.status.textContent = message;
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function fetchWithRetry(url, options, maxAttempts = 3) {
+  let lastErr = null;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const response = await fetch(url, options);
+
+      if (
+        (response.status === 429 || response.status >= 500) &&
+        attempt < maxAttempts
+      ) {
+        await sleep(800 * attempt);
+        continue;
+      }
+
+      return response;
+    } catch (err) {
+      lastErr = err;
+      if (attempt < maxAttempts) {
+        await sleep(800 * attempt);
+        continue;
+      }
+    }
+  }
+
+  throw lastErr;
+}
+
+function normalizeForSearch(s) {
+  return String(s ?? "")
+    .replace(/\u00a0/g, " ")
+    .replace(/[ \t\r\n]+/g, " ")
+    .trim();
+}
+
+function base64ToBytes(b64) {
+  const bin = atob(String(b64).replace(/\s+/g, ""));
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
+function bytesToBase64(bytes) {
+  let bin = "";
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
+
+function decodeQuotedPrintable(str) {
+  const noSoftBreaks = str.replace(/=\r\n/g, "").replace(/=\n/g, "");
+  const bytes = [];
+  for (let i = 0; i < noSoftBreaks.length; i++) {
+    const ch = noSoftBreaks[i];
+    if (ch === "=" && /^[0-9A-Fa-f]{2}$/.test(noSoftBreaks.substr(i + 1, 2))) {
+      bytes.push(parseInt(noSoftBreaks.substr(i + 1, 2), 16));
+      i += 2;
+    } else {
+      bytes.push(noSoftBreaks.charCodeAt(i) & 0xff);
+    }
+  }
+  return new Uint8Array(bytes);
+}
+
+function decodeBytes(bytes, charset) {
+  const label = String(charset || "utf-8").trim();
+  try {
+    return new TextDecoder(label).decode(bytes);
+  } catch (e) {
+    return new TextDecoder("utf-8").decode(bytes);
+  }
+}
+
+function decodeMimeWords(str) {
+  if (!str) return "";
+  return str.replace(
+    /=\?([^?]+)\?([BbQq])\?([^?]*)\?=(\s+(?==\?))?/g,
+    (m, charset, enc, data) => {
+      let bytes;
+      if (enc.toUpperCase() === "B") {
+        bytes = base64ToBytes(data);
+      } else {
+        bytes = decodeQuotedPrintable(data.replace(/_/g, " "));
+      }
+      return decodeBytes(bytes, charset);
+    }
+  );
+}
+
+function parseHeaders(block) {
+  const unfolded = block.replace(/\r\n/g, "\n").replace(/\n[ \t]+/g, " ");
+  const lines = unfolded.split("\n").filter(Boolean);
+  const headers = {};
+
+  for (const line of lines) {
+    const m = line.match(/^([^:]+):\s*(.*)$/);
+    if (!m) continue;
+    const key = m[1].trim().toLowerCase();
+    const val = m[2];
+    headers[key] = headers[key] ? headers[key] + ", " + val : val;
+  }
+
+  return headers;
+}
+
+function parseContentType(v) {
+  if (!v) return { type: "text/plain", params: {} };
+
+  const parts = v.split(";");
+  const type = parts[0].trim().toLowerCase();
+  const params = {};
+
+  for (let i = 1; i < parts.length; i++) {
+    const eq = parts[i].indexOf("=");
+    if (eq === -1) continue;
+    const key = parts[i].slice(0, eq).trim().toLowerCase();
+    let val = parts[i].slice(eq + 1).trim();
+    val = val.replace(/^"(.*)"$/, "$1");
+    params[key] = val;
+  }
+
+  return { type, params };
+}
+
+function parseMimePart(raw) {
+  const sepMatch = raw.match(/\r?\n\r?\n/);
+  let headerBlock, body;
+
+  if (sepMatch) {
+    headerBlock = raw.slice(0, sepMatch.index);
+    body = raw.slice(sepMatch.index + sepMatch[0].length);
+  } else {
+    headerBlock = raw;
+    body = "";
+  }
+
+  const headers = parseHeaders(headerBlock);
+  const ct = parseContentType(headers["content-type"]);
+
+  if (ct.type.startsWith("multipart/") && ct.params.boundary) {
+    const delim = "--" + ct.params.boundary;
+    const segments = body.split(delim);
+    const partsRaw = segments.slice(1, -1);
+
+    const children = partsRaw
+      .map(p => p.replace(/^\r?\n/, ""))
+      .filter(p => p.trim().length > 0)
+      .map(p => parseMimePart(p));
+
+    return { headers, type: ct.type, children };
+  }
+
+  const cte = String(headers["content-transfer-encoding"] || "7bit")
+    .toLowerCase()
+    .trim();
+
+  let bytes;
+  if (cte === "base64") bytes = base64ToBytes(body);
+  else if (cte === "quoted-printable") bytes = decodeQuotedPrintable(body);
+  else bytes = Uint8Array.from(body, c => c.charCodeAt(0) & 0xff);
+
+  const isText = ct.type.startsWith("text/");
+  const charset = ct.params.charset || "utf-8";
+
+  return {
+    headers,
+    type: ct.type,
+    bytes,
+    text: isText ? decodeBytes(bytes, charset) : null
+  };
+}
+
+function collectLeaves(node, acc) {
+  if (!node) return acc;
+  if (node.children) {
+    for (const c of node.children) collectLeaves(c, acc);
+  } else {
+    acc.push(node);
+  }
+  return acc;
+}
+
+function findPart(node, wantType) {
+  if (!node) return null;
+  if (!node.children && node.type === wantType) return node;
+  if (node.children) {
+    for (const c of node.children) {
+      const found = findPart(c, wantType);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+function resolveCidImages(html, cidMap) {
+  return html.replace(/src=(["'])cid:([^"']+)\1/gi, (m, q, cid) => {
+    const dataUrl = cidMap[cid.trim()];
+    return dataUrl ? `src=${q}${dataUrl}${q}` : m;
+  });
+}
+
+async function parseEml(file) {
+  const buffer = await file.arrayBuffer();
+  const raw = new TextDecoder("iso-8859-1").decode(buffer);
+  const root = parseMimePart(raw);
+  const leaves = collectLeaves(root, []);
+  const cidMap = {};
+
+  for (const leaf of leaves) {
+    const cidHeader = leaf.headers["content-id"];
+    if (!cidHeader) continue;
+    if (!/^image\//i.test(leaf.type)) continue;
+
+    const cid = cidHeader.replace(/^</, "").replace(/>$/, "").trim();
+    if (!cid) continue;
+
+    cidMap[cid] = `data:${leaf.type};base64,${bytesToBase64(leaf.bytes)}`;
+  }
+
+  const htmlPart = findPart(root, "text/html");
+  const textPart = findPart(root, "text/plain");
+  const headers = root.headers || {};
+
+  return {
+    from: decodeMimeWords(headers["from"] || ""),
+    to: decodeMimeWords(headers["to"] || ""),
+    subject: decodeMimeWords(headers["subject"] || ""),
+    date: headers["date"] || "",
+    html: htmlPart ? htmlPart.text : null,
+    text: textPart ? textPart.text : null,
+    cidMap
+  };
+}
+
+function buildIframeDocHtml(sanitizedBodyHtml, parsed) {
+  const catStyles = Object.entries(CATEGORY_HEX)
+    .map(([cls, hex]) => `.${cls}{background:${hex};}`)
+    .join("\n");
+  const closeTags = "</" + "body>" + "</" + "html>";
+
+  return `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><style>
+html,body{margin:0;padding:0;overflow:hidden;}
+body{
+  font-family:"Hiragino Kaku Gothic ProN","Meiryo",sans-serif;
+  font-size:14px;
+  line-height:1.7;
+  color:#222;
+  background:#fff;
+  padding:20px 22px;
+  word-break:break-word;
+}
+.__meta{border-bottom:1px solid #ddd;margin-bottom:16px;padding-bottom:10px;font-size:12px;color:#555;}
+.__meta div{margin:2px 0;}
+.__meta b{color:#333;}
+img{max-width:100%;height:auto;}
+.__blocked-img{
+  display:inline-block;padding:3px 8px;border:1px dashed #bbb;
+  border-radius:4px;background:#f7f7f5;color:#888;font-size:12px;cursor:pointer;
+}
+mark{border-radius:3px;padding:0 1px;cursor:pointer;opacity:.55;transition:opacity .12s, outline .12s;}
+mark:hover, mark.active{opacity:.85; outline:2px solid #555;}
+a{cursor:not-allowed;}
+mark.user-mark{background:#cfe3ff;opacity:.9;cursor:pointer;}
+mark.user-mark:hover{opacity:1;outline:2px solid #7fa8e0;}
+.user-mark-correct{background:#ddf5dd;border-radius:3px;}
+.user-mark-missed{background:#fff1cc;border-radius:3px;}
+.user-mark-overchecked{background:#ffe0e0;border-radius:3px;text-decoration:underline wavy #c55;}
+${catStyles}
+</style></head>
+<body>
+  <div class="__meta">
+    <div><b>差出人：</b>${escapeHtml(parsed.from || "(不明)")}</div>
+    <div><b>件名：</b>${escapeHtml(parsed.subject || "(不明)")}</div>
+    <div><b>日時：</b>${escapeHtml(parsed.date || "(不明)")}</div>
+  </div>
+  <div id="__mailBody">${sanitizedBodyHtml}</div>
+` + closeTags;
+}
+
+function blockRemoteImages(iframeDoc, bodyRoot) {
+  const imgs = Array.from(bodyRoot.querySelectorAll("img[src]"));
+  for (const img of imgs) {
+    const src = img.getAttribute("src") || "";
+    if (!/^https?:\/\//i.test(src)) continue; 
+    const span = iframeDoc.createElement("span");
+    span.className = "__blocked-img __no-index";
+    span.dataset.src = src;
+    span.textContent = "外部画像（クリックで表示）";
+    img.replaceWith(span);
+  }
+}
+
+function unblockImage(iframeDoc, span) {
+  const img = iframeDoc.createElement("img");
+  img.src = span.dataset.src;
+  span.replaceWith(img);
+}
+
+async function renderEmailToIframe(parsed) {
+  els.viewer.innerHTML = "";
+
+  const wrap = document.createElement("div");
+  wrap.className = "mail-frame-wrap";
+
+  const iframe = document.createElement("iframe");
+  iframe.setAttribute("sandbox", "allow-same-origin");
+  iframe.setAttribute("scrolling", "no");
+
+  wrap.appendChild(iframe);
+  els.viewer.appendChild(wrap);
+
+  const rawBodyHtml = parsed.html
+    ? resolveCidImages(parsed.html, parsed.cidMap)
+    : textToHtml(parsed.text || "(本文を取得できませんでした)");
+
+  const sanitized = DOMPurify.sanitize(rawBodyHtml, {
+    FORBID_TAGS: ["script", "style", "iframe", "object", "embed", "form", "input", "button", "base", "link", "meta"],
+    FORBID_ATTR: ["srcset"]
+  });
+
+  const docHtml = buildIframeDocHtml(sanitized, parsed);
+
+  await new Promise(resolve => {
+    iframe.addEventListener("load", () => resolve(), { once: true });
+    iframe.srcdoc = docHtml;
+  });
+
+  const iframeDoc = iframe.contentDocument;
+  const bodyRoot = iframeDoc.getElementById("__mailBody");
+
+  blockRemoteImages(iframeDoc, bodyRoot);
+
+  bodyRoot.addEventListener("click", e => {
+    const mark = e.target.closest("mark[data-flag-index]");
+    if (mark) {
+      activateFlag(Number(mark.dataset.flagIndex));
+      return;
+    }
+    const blocked = e.target.closest(".__blocked-img");
+    if (blocked) unblockImage(iframeDoc, blocked);
+  });
+
+  bodyRoot.addEventListener("mouseup", handleBodyMouseUp);
+
+  const pristineHTML = bodyRoot.innerHTML;
+  const model = buildTextModel(bodyRoot);
+
+  iframe.style.height = iframeDoc.documentElement.scrollHeight + "px";
+
+  return { iframe, iframeDoc, bodyRoot, pristineHTML, model };
+}
+
+function buildTextModel(rootEl) {
+  const doc = rootEl.ownerDocument || document;
+
+  const walker = doc.createTreeWalker(rootEl, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      let p = node.parentElement;
+      while (p && p !== rootEl) {
+        if (p.classList && p.classList.contains("__no-index")) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        p = p.parentElement;
+      }
+      return NodeFilter.FILTER_ACCEPT;
+    }
+  });
+
+  const segments = [];
+  let text = "";
+  let node;
+
+  while ((node = walker.nextNode())) {
+    const val = node.nodeValue;
+    if (!val) continue;
+    segments.push({ node, start: text.length, end: text.length + val.length });
+    text += val;
+  }
+
+  return { text, segments };
+}
+
+function wrapRangesInBody(iframeDoc, bodyRoot, baseHTML, ranges, makeWrapper) {
+  bodyRoot.innerHTML = baseHTML;
+  const model = buildTextModel(bodyRoot);
+
+  const valid = ranges.filter(r =>
+    typeof r.start === "number" && typeof r.end === "number" && r.end > r.start
+  );
+
+  for (const seg of model.segments) {
+    const overlaps = valid
+      .map(r => ({
+        ...r,
+        segStart: Math.max(r.start, seg.start) - seg.start,
+        segEnd: Math.min(r.end, seg.end) - seg.start
+      }))
+      .filter(o => o.segEnd > o.segStart)
+      .sort((a, b) => a.segStart - b.segStart);
+
+    if (!overlaps.length) continue;
+
+    const original = seg.node.nodeValue;
+    const pieces = [];
+    let cursor = 0;
+
+    for (const o of overlaps) {
+      const s = Math.max(o.segStart, cursor);
+      const e = Math.max(o.segEnd, s);
+
+      if (s > cursor) pieces.push(iframeDoc.createTextNode(original.slice(cursor, s)));
+
+      if (e > s) {
+        pieces.push(makeWrapper(iframeDoc, original.slice(s, e), o));
+      }
+
+      cursor = Math.max(cursor, e);
+    }
+
+    if (cursor < original.length) {
+      pieces.push(iframeDoc.createTextNode(original.slice(cursor)));
+    }
+
+    seg.node.replaceWith(...pieces);
+  }
+
+  return bodyRoot.innerHTML;
+}
+
+function applyHighlights(iframeDoc, bodyRoot, baseHTML, flags) {
+  const ranges = flags.map((flag, i) => ({
+    start: flag.start,
+    end: flag.end,
+    flagIndex: i,
+    category: flag.category
+  }));
+
+  flags.forEach(flag => { flag._elements = []; });
+
+  wrapRangesInBody(iframeDoc, bodyRoot, baseHTML, ranges, (doc, text, r) => {
+    const mark = doc.createElement("mark");
+    mark.className = CATEGORY_COLORS[r.category] || "cat-その他";
+    mark.dataset.flagIndex = r.flagIndex;
+    mark.textContent = text;
+    flags[r.flagIndex]._elements.push(mark);
+    return mark;
+  });
+}
+
+function activateFlag(index) {
+  currentFlags.forEach((flag, i) => {
+    flag._elements?.forEach(el => {
+      el.classList.toggle("active", i === index);
+    });
+  });
+
+  document.querySelectorAll(".flag-item").forEach(card => {
+    card.classList.toggle("active", Number(card.dataset.flagIndex) === index);
+  });
+
+  const flag = currentFlags[index];
+  const first = flag?._elements?.[0];
+
+  if (first) {
+    first.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+  }
+
+  const card = document.querySelector(`.flag-item[data-flag-index="${index}"]`);
+  if (card) {
+    card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+}
+
+function firstTextDescendant(node) {
+  if (node.nodeType === Node.TEXT_NODE) return node.nodeValue.length ? node : null;
+  if (node.nodeType !== Node.ELEMENT_NODE) return null;
+  for (const child of node.childNodes) {
+    const found = firstTextDescendant(child);
+    if (found) return found;
+  }
+  return null;
+}
+
+function lastTextDescendant(node) {
+  if (node.nodeType === Node.TEXT_NODE) return node.nodeValue.length ? node : null;
+  if (node.nodeType !== Node.ELEMENT_NODE) return null;
+  for (let i = node.childNodes.length - 1; i >= 0; i--) {
+    const found = lastTextDescendant(node.childNodes[i]);
+    if (found) return found;
+  }
+  return null;
+}
+
+function resolveBoundaryToTextNode(container, offset, edge) {
+  if (container.nodeType === Node.TEXT_NODE) return { node: container, offset };
+
+  if (edge === "start") {
+    for (let i = offset; i < container.childNodes.length; i++) {
+      const n = firstTextDescendant(container.childNodes[i]);
+      if (n) return { node: n, offset: 0 };
+    }
+  } else {
+    for (let i = offset - 1; i >= 0; i--) {
+      const n = lastTextDescendant(container.childNodes[i]);
+      if (n) return { node: n, offset: n.nodeValue.length };
+    }
+  }
+  return null;
+}
+
+function domPointToTextOffset(model, node, offset) {
+  const seg = model.segments.find(s => s.node === node);
+  if (!seg) return null;
+  return seg.start + offset;
+}
+
+function selectionToTextRange(bodyRoot, selection) {
+  if (!selection || selection.isCollapsed || selection.rangeCount === 0) return null;
+
+  const range = selection.getRangeAt(0);
+  if (!bodyRoot.contains(range.commonAncestorContainer)) return null;
+
+  const model = buildTextModel(bodyRoot);
+
+  const startPoint = resolveBoundaryToTextNode(range.startContainer, range.startOffset, "start");
+  const endPoint = resolveBoundaryToTextNode(range.endContainer, range.endOffset, "end");
+  if (!startPoint || !endPoint) return null;
+
+  const startAbs = domPointToTextOffset(model, startPoint.node, startPoint.offset);
+  const endAbs = domPointToTextOffset(model, endPoint.node, endPoint.offset);
+  if (startAbs === null || endAbs === null) return null;
+
+  const start = Math.min(startAbs, endAbs);
+  const end = Math.max(startAbs, endAbs);
+  return end > start ? { start, end } : null;
+}
+
+function mergeUserMark(marks, newRange) {
+  const dup = marks.some(m => m.start === newRange.start && m.end === newRange.end);
+  return dup ? marks : [...marks, newRange];
+}
+
+function renderUserMarks() {
+  if (!emailContext) return;
+
+  wrapRangesInBody(
+    emailContext.iframeDoc,
+    emailContext.bodyRoot,
+    emailContext.pristineHTML,
+    emailContext.userMarks.map((m, i) => ({ start: m.start, end: m.end, markIndex: i })),
+    (doc, text, r) => {
+      const mark = doc.createElement("mark");
+      mark.className = "user-mark";
+      mark.dataset.userMarkIndex = r.markIndex;
+      mark.textContent = text;
+      return mark;
+    }
+  );
+
+  els.beginnerCheckSummary.textContent = emailContext.userMarks.length
+    ? `${emailContext.userMarks.length}箇所をマーキングしました。マーキングをもう一度クリックすると解除できます。マーキングし終えたら「診断」ボタンを押してください。`
+    : "本文中で「怪しい」と思う文字列をドラッグして選択すると、その部分をマーキングできます。";
+}
+
+function handleBodyMouseUp(e) {
+  if (!emailContext || emailContext.markingLocked) return;
+  if (els.literacy.value !== "beginner") return;
+
+  const selection = emailContext.iframeDoc.getSelection();
+
+  if (selection.isCollapsed) {
+    const markEl = e.target.closest("mark.user-mark[data-user-mark-index]");
+    if (markEl) {
+      const idx = Number(markEl.dataset.userMarkIndex);
+      emailContext.userMarks = emailContext.userMarks.filter((_, i) => i !== idx);
+      renderUserMarks();
+    }
+    return;
+  }
+
+  const textRange = selectionToTextRange(emailContext.bodyRoot, selection);
+  if (textRange) {
+    emailContext.userMarks = mergeUserMark(emailContext.userMarks, textRange);
+    selection.removeAllRanges();
+    renderUserMarks();
+  }
+}
+
+function scoreUserMarks(resolvedFlags, userMarks) {
+  const aiRanges = resolvedFlags.filter(f =>
+    typeof f.start === "number" && typeof f.end === "number" && f.end > f.start
+  );
+  const aiFlaggedTotal = aiRanges.length;
+
+  let correct = 0;
+  aiRanges.forEach(f => {
+    if (userMarks.some(m => m.start < f.end && m.end > f.start)) correct++;
+  });
+
+  let overChecked = 0;
+  userMarks.forEach(m => {
+    if (!aiRanges.some(f => f.start < m.end && f.end > m.start)) overChecked++;
+  });
+
+  let comment;
+  if (aiFlaggedTotal === 0) {
+    comment = userMarks.length === 0
+      ? "この文面では特に怪しい部分は見つかりませんでした。"
+      : "この文面では特に怪しい部分は見つかりませんでした。マーキングした箇所は、念のための確認としては良い着眼点です。";
+  } else if (correct === aiFlaggedTotal && overChecked === 0) {
+    comment = "怪しい部分をすべて正しく見抜けました！";
+  } else if (correct === 0) {
+    comment = `怪しいと判定された箇所が${aiFlaggedTotal}件ありましたが、マーキングはついていませんでした。右側の解説とメール本文中の色分けを見比べてみましょう。`;
+  } else {
+    comment = `${aiFlaggedTotal}件中${correct}件を正しく見抜けました。おしい！残りの箇所も本文中の色分けで確認してみましょう。`;
+  }
+
+  return { correct, aiFlaggedTotal, checkedCount: userMarks.length, overChecked, comment };
+}
+
+function computeCorrectnessRanges(resolvedFlags, userMarks) {
+  const aiRanges = resolvedFlags
+    .filter(f => typeof f.start === "number" && typeof f.end === "number" && f.end > f.start)
+    .map(f => ({ start: f.start, end: f.end }));
+  const userRanges = userMarks.filter(m => m.end > m.start);
+
+  const points = new Set();
+  [...aiRanges, ...userRanges].forEach(r => { points.add(r.start); points.add(r.end); });
+  const sorted = Array.from(points).sort((a, b) => a - b);
+
+  const result = [];
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const s = sorted[i], e = sorted[i + 1];
+    if (e <= s) continue;
+
+    const mid = (s + e) / 2;
+    const isAi = aiRanges.some(r => r.start <= mid && r.end > mid);
+    const isUser = userRanges.some(r => r.start <= mid && r.end > mid);
+    if (!isAi && !isUser) continue;
+
+    const cls = isAi && isUser
+      ? "user-mark-correct"
+      : isAi ? "user-mark-missed" : "user-mark-overchecked";
+
+    result.push({ start: s, end: e, cls });
+  }
+  return result;
+}
+
+function makeCorrectnessSpan(iframeDoc, text, r) {
+  const span = iframeDoc.createElement("span");
+  span.className = r.cls;
+  span.textContent = text;
+  return span;
+}
+
+function updateLiteracyUI() {
+  const isBeginner = els.literacy.value === "beginner";
+  els.answerBoxAdvanced.style.display = isBeginner ? "none" : "";
+  els.answerBoxBeginner.style.display = isBeginner ? "" : "none";
+  if (isBeginner && emailContext && !emailContext.markingLocked) {
+    renderUserMarks();
+  }
+}
+
+function maskPII(text) {
+  const patterns = [
+    {
+      label: "PHONE",
+      regex: /(?:\+81[-\s]?)?0\d{1,4}[-\s]\d{1,4}[-\s]\d{3,4}/g
+    },
+    {
+      label: "EMAIL",
+      regex: /[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+/g
+    }
+  ];
+
+  const replacements = [];
+  let counter = 0;
+
+  for (const pattern of patterns) {
+    pattern.regex.lastIndex = 0;
+    let match;
+
+    while ((match = pattern.regex.exec(text)) !== null) {
+      counter++;
+      replacements.push({
+        start: match.index,
+        end: match.index + match[0].length,
+        token: `《${pattern.label}_${counter}》`,
+        original: match[0]
+      });
+    }
+  }
+
+  replacements.sort((a, b) => a.start - b.start);
+
+  const nonOverlapping = [];
+  let lastEnd = -1;
+  for (const r of replacements) {
+    if (r.start >= lastEnd) {
+      nonOverlapping.push(r);
+      lastEnd = r.end;
+    }
+  }
+
+  let masked = "";
+  let cursor = 0;
+  const tokenMap = {};
+
+  for (const r of nonOverlapping) {
+    masked += text.slice(cursor, r.start);
+    const maskedStart = masked.length;
+    masked += r.token;
+    const maskedEnd = masked.length;
+
+    tokenMap[r.token] = {
+      token: r.token,
+      original: r.original,
+      start: r.start,           
+      end: r.end,
+      maskedStart,               
+      maskedEnd
+    };
+
+    cursor = r.end;
+  }
+
+  masked += text.slice(cursor);
+
+  return { masked, tokenMap };
+}
+
+function maskedOffsetToOriginal(tokenMap, maskedOffset) {
+  const tokens = Object.values(tokenMap).sort((a, b) => a.maskedStart - b.maskedStart);
+  let delta = 0;
+
+  for (const t of tokens) {
+    if (t.maskedEnd <= maskedOffset) {
+      delta += (t.end - t.start) - (t.maskedEnd - t.maskedStart);
+    } else {
+      break;
+    }
+  }
+
+  return maskedOffset + delta;
+}
+
+
+function findAllOccurrences(text, needle) {
+  const result = [];
+  if (!needle) return result;
+
+  let pos = 0;
+  while (true) {
+    const found = text.indexOf(needle, pos);
+    if (found === -1) break;
+    result.push({ start: found, end: found + needle.length });
+    pos = found + Math.max(1, needle.length);
+  }
+
+  return result;
+}
+
+function chooseOccurrence(text, flag) {
+  const exact = findAllOccurrences(text, flag.matched_text);
+
+  if (!exact.length) return null;
+  if (exact.length === 1) return exact[0];
+
+  const before = normalizeForSearch(flag.context_before || "");
+  const after = normalizeForSearch(flag.context_after || "");
+
+  let best = null;
+  let bestScore = -1;
+
+  for (const occ of exact) {
+    const left = normalizeForSearch(text.slice(Math.max(0, occ.start - 120), occ.start));
+    const right = normalizeForSearch(text.slice(occ.end, Math.min(text.length, occ.end + 120)));
+
+    let score = 0;
+    if (before && left.endsWith(before)) score += 4;
+    else if (before && left.includes(before)) score += 2;
+
+    if (after && right.startsWith(after)) score += 4;
+    else if (after && right.includes(after)) score += 2;
+
+    if (score > bestScore) {
+      bestScore = score;
+      best = occ;
+    }
+  }
+
+  return best || exact[0];
+}
+
+function resolveFlag(maskedText, tokenMap, flag) {
+  const matched = String(flag.matched_text || "").trim();
+  if (!matched) return null;
+
+  if (tokenMap[matched]) {
+    const entry = tokenMap[matched];
+    return {
+      ...flag,
+      matched_text: entry.original,
+      display_matched_text: matched,
+      start: entry.start,
+      end: entry.end,
+      source: "masked-token"
+    };
+  }
+
+  const occurrence = chooseOccurrence(maskedText, flag);
+  if (!occurrence) return null;
+
+  return {
+    ...flag,
+    start: maskedOffsetToOriginal(tokenMap, occurrence.start),
+    end: maskedOffsetToOriginal(tokenMap, occurrence.end),
+    source: "text-search"
+  };
+}
+
+function renderAnalysis(result, flags, beginnerResult) {
+  currentFlags = flags;
+
+  if (beginnerResult) {
+    const correctness = computeCorrectnessRanges(flags, beginnerResult.userMarks);
+    const baseHTML = wrapRangesInBody(
+      emailContext.iframeDoc,
+      emailContext.bodyRoot,
+      emailContext.pristineHTML,
+      correctness,
+      makeCorrectnessSpan
+    );
+    applyHighlights(emailContext.iframeDoc, emailContext.bodyRoot, baseHTML, flags);
+  } else {
+    applyHighlights(emailContext.iframeDoc, emailContext.bodyRoot, emailContext.pristineHTML, flags);
+  }
+
+  const score = Math.max(0, Math.min(100, Number(result.risk_score) || 0));
+
+  let riskClass = "risk-low";
+  if (score >= 70) riskClass = "risk-high";
+  else if (score >= 40) riskClass = "risk-mid";
+
+  let html = `
+    <div class="risk-score ${riskClass}">
+      危険度スコア：${score} / 100
+    </div>
+  `;
+
+  if (beginnerResult) {
+    const f = beginnerResult.feedback;
+    html += `
+      <div class="feedback-card">
+        <div class="feedback-title">あなたのマーキングの採点：${f.correct} / ${f.aiFlaggedTotal}（見抜けた怪しい箇所）</div>
+        <div class="fb-comment" style="border-top:none;padding-top:0;">${escapeHtml(f.comment)}</div>
+        ${f.overChecked ? `<div class="small" style="margin-top:6px;">※ ${f.overChecked}箇所は、AIが怪しいと判定していない部分へのマーキングでした。</div>` : ""}
+      </div>
+    `;
+  }
+
+  const fb = beginnerResult ? null : result.user_answer_feedback;
+  if (fb) {
+    const fbScore = Math.max(0, Math.min(100, Number(fb.score_out_of_100) || 0));
+    const list = (arr, label) =>
+      Array.isArray(arr) && arr.length
+        ? `<div class="fb-section"><b>${label}</b><ul>${arr.map(p => `<li>${escapeHtml(p)}</li>`).join("")}</ul></div>`
+        : "";
+
+    html += `
+      <div class="feedback-card">
+        <div class="feedback-title">あなたの回答の採点：${fbScore} / 100</div>
+        ${list(fb.matched_points, "的確だった点")}
+        ${list(fb.missed_points, "見落としていた点")}
+        ${list(fb.incorrect_points, "誤りだった点")}
+        <div class="fb-comment">${escapeHtml(fb.comment || "")}</div>
+      </div>
+    `;
+  }
+
+  html += `
+    <div class="summary">
+      検出件数：${flags.length}件
+      <div class="small">メール本文中の色付き部分をクリックすると、右側の説明と対応します。</div>
+    </div>
+    <div class="flag-list">
+  `;
+
+  if (!flags.length) {
+    html += `<div class="empty">特に注意すべき箇所は検出されませんでした。</div>`;
+  } else {
+    flags.forEach((flag, index) => {
+      const reason =
+        els.literacy.value === "advanced" ? flag.reason_advanced : flag.reason_beginner;
+
+      html += `
+        <div class="flag-item" data-flag-index="${index}">
+          <div class="flag-category">
+             ${escapeHtml(flag.category || "その他")}
+          </div>
+          <div class="matched">
+            ${escapeHtml(flag.display_matched_text || flag.matched_text || "")}
+          </div>
+          <div>${escapeHtml(reason || "理由の説明がありません。")}</div>
+          <div class="advice">
+            <strong>対策：</strong>
+            ${escapeHtml(flag.advice || "対策の情報を取得できませんでした。")}
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  html += `</div>`;
+  els.output.innerHTML = html;
+
+  document.querySelectorAll(".flag-item").forEach(card => {
+    card.addEventListener("click", () => {
+      activateFlag(Number(card.dataset.flagIndex));
+    });
+  });
+}
+
+async function analyzeMail(maskedText, literacyLevel, userAnswer) {
+  const hasUserAnswer = !!(userAnswer && userAnswer.trim());
+
+  const prompt = `
+あなたはメールセキュリティ教育ツールの分析エンジンです。
+以下のメール本文（差出人・件名・日時などのヘッダ情報を含む）を分析し、フィッシング・詐欺・なりすまし等の危険箇所を検出してください。
+
+重要なルール:
+1. matched_text は、入力本文に実際に存在する文字列を完全一致で返す。
+2. 《PHONE_数字》や《EMAIL_数字》などのトークンは絶対に変更しない。
+3. 普通の文章を検出した場合も、入力本文からそのまま抜粋する。
+4. 同じ matched_text が本文に複数回ある可能性がある。その場合は context_before と context_after を使って該当箇所を区別する。
+5. context_before / context_after は、matched_textの直前・直後に実際に存在する短い文字列を抜粋する。なければ空文字列。
+6. URLそのものを検出する場合、入力本文中のURLをそのまま matched_text にする。マスキングされていないURLを勝手に《URL_1》へ変更しない。
+7. 出力はJSONのみ。Markdownコードブロックは禁止。
+8. categoryは「なりすまし」「緊急性煽り」「個人情報要求」「不審URL」のいずれか。
+9. 危険箇所が複数ある場合は、それぞれ別のflagにする。
+10. 根拠が弱いものを無理に危険と判定しない。
+11. 本文冒頭の「差出人」「件名」「日時」も分析対象に含める。表示名と実際のアドレスの不一致などがあれば、なりすましとして検出してよい。
+12. user_answer_feedback は、下部の「ユーザーの回答」を、あなた自身が検出したflagsと照らし合わせて採点する。ユーザーの回答が空、または実質的な内容がない場合は user_answer_feedback を null にする。
+13. matched_points / missed_points / incorrect_points の各要素は日本語で1文程度、簡潔にする。存在しなければ空配列。
+14. comment は総評を2〜3文。的確だった点は肯定し、見落としがあれば次に活かせるように指摘する。教育的で前向きなトーンにする。
+
+JSON形式:
+{
+  "risk_score": 0から100の整数,
+  "flags": [
+    {
+      "matched_text": "入力本文中の実在する文字列",
+      "context_before": "直前の短い文字列",
+      "context_after": "直後の短い文字列",
+      "category": "なりすまし または 緊急性煽り または 個人情報要求 または 不審URL",
+      "reason_beginner": "初心者にも分かる理由を2文程度",
+      "reason_advanced": "技術的な観点からの理由を2文程度",
+      "advice": "具体的な対策"
+    }
+  ],
+  "user_answer_feedback": {
+    "score_out_of_100": 0から100の整数,
+    "matched_points": ["ユーザーが正しく指摘できていた点"],
+    "missed_points": ["ユーザーが見落としていた危険箇所"],
+    "incorrect_points": ["ユーザーの指摘のうち誤りだった点"],
+    "comment": "総評"
+  } または null
+}
+
+ITリテラシーレベル: ${literacyLevel}
+
+メール本文（ヘッダ含む）:
+${maskedText}
+
+ユーザーの回答（このメールで怪しいと思った箇所とその理由。分析結果を見る前に自分で記入したもの）:
+${hasUserAnswer ? userAnswer.trim() : "(未回答)"}
+`;
+
+  const response = await fetchWithRetry("/api/analyze", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model: GEMINI_MODEL,
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: prompt }]
+        }
+      ],
+      generationConfig: {
+        temperature: 0.2,
+        maxOutputTokens: 4096,
+        responseMimeType: "application/json"
+      }
+    })
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`APIエラー ${response.status}: ${body}`);
+  }
+
+  const data = await response.json();
+
+  const blockReason = data?.promptFeedback?.blockReason;
+  if (blockReason) {
+    throw new Error(`入力がブロックされました（理由: ${blockReason}）`);
+  }
+
+  const candidate = data?.candidates?.[0];
+  const finishReason = candidate?.finishReason;
+
+  if (finishReason === "SAFETY" || finishReason === "RECITATION") {
+    throw new Error(
+      `安全フィルタ等により応答が生成されませんでした（finishReason: ${finishReason}）。もう一度お試しいただくか、内容を確認してください。`
+    );
+  }
+
+  const raw = candidate?.content?.parts
+    ?.map(p => p.text || "")
+    ?.join("") || "";
+
+  if (!raw) {
+    throw new Error(
+      "AIからテキスト形式の応答が返りませんでした。" +
+      (finishReason ? `（finishReason: ${finishReason}）` : "")
+    );
+  }
+
+  const cleaned = raw
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+
+  try {
+    return JSON.parse(cleaned);
+  } catch (e) {
+    const first = cleaned.indexOf("{");
+    const last = cleaned.lastIndexOf("}");
+
+    if (first !== -1 && last > first) {
+      try {
+        return JSON.parse(cleaned.slice(first, last + 1));
+      } catch (e2) {
+      }
+    }
+
+    throw new Error(
+      "AIのJSON解析に失敗しました。" +
+      (finishReason === "MAX_TOKENS"
+        ? "応答が出力上限で途中に切れた可能性があります。"
+        : "") +
+      "\nAIの返答:\n" + cleaned.slice(0, 1000)
+    );
+  }
+}
+
+async function handleEmlFile(file) {
+  currentFile = file;
+  els.analyzeBtn.disabled = true;
+  els.analyzeBtn.textContent = "メール読み込み中...";
+  els.output.innerHTML = `<div class="empty">診断結果がこちらに表示されます</div>`;
+  els.userAnswer.value = "";
+  els.userAnswer.disabled = true;
+
+  try {
+    const name = (file.name || "").toLowerCase();
+    if (!name.endsWith(".eml")) {
+      throw new Error(".emlファイルを選択してください。");
+    }
+
+    setStatus("メールファイルを読み込み中...");
+    const parsed = await parseEml(file);
+
+    setStatus("メール本文を描画中...");
+    const rendered = await renderEmailToIframe(parsed);
+
+    emailContext = {
+      iframeDoc: rendered.iframeDoc,
+      bodyRoot: rendered.bodyRoot,
+      pristineHTML: rendered.pristineHTML,
+      text: rendered.model.text
+    };
+
+    const { masked, tokenMap } = maskPII(emailContext.text);
+    emailContext.maskedText = masked;
+    emailContext.tokenMap = tokenMap;
+
+    emailContext.userMarks = [];
+    emailContext.markingLocked = false;
+
+    setStatus("準備完了");
+
+    els.analyzeBtn.disabled = false;
+    els.analyzeBtn.textContent = "診断";
+    els.userAnswer.disabled = false;
+    updateLiteracyUI();
+
+  } catch (err) {
+    console.error(err);
+    setStatus("エラー：" + err.message);
+    els.output.innerHTML = `
+      <div class="empty">
+        <strong>読み込みに失敗しました。</strong><br><br>
+        ${escapeHtml(err.message)}
+      </div>
+    `;
+    els.analyzeBtn.disabled = true;
+    els.analyzeBtn.textContent = "メール(.eml)を選択してください";
+    emailContext = null;
+  }
+}
+
+const fileInput = document.createElement("input");
+fileInput.type = "file";
+fileInput.accept = ".eml,message/rfc822";
+fileInput.id = "emlInput";
+fileInput.title = "診断するメール(.eml)";
+fileInput.style.position = "absolute";
+fileInput.style.width = "1px";
+fileInput.style.height = "1px";
+fileInput.style.opacity = "0";
+fileInput.style.pointerEvents = "none";
+
+document.body.appendChild(fileInput);
+
+const chooseButton = document.createElement("button");
+chooseButton.textContent = "メール(.eml)を選択";
+chooseButton.className = "btn-accent";
+chooseButton.addEventListener("click", () => fileInput.click());
+
+els.analyzeBtn.before(chooseButton);
+
+fileInput.addEventListener("change", e => {
+  const file = e.target.files?.[0];
+  if (file) handleEmlFile(file);
+});
+
+els.literacy.addEventListener("change", updateLiteracyUI);
+updateLiteracyUI();
+
+els.analyzeBtn.addEventListener("click", async () => {
+  if (!currentFile || !emailContext) return;
+
+  const isBeginner = els.literacy.value === "beginner";
+
+  const userMarksSnapshot = isBeginner ? emailContext.userMarks.slice() : [];
+  const userAnswerText = isBeginner ? "" : els.userAnswer.value;
+
+  els.userAnswer.disabled = true;
+  if (isBeginner) {
+    emailContext.markingLocked = true;
+  }
+
+  try {
+    els.analyzeBtn.disabled = true;
+    els.analyzeBtn.textContent = "診断中...";
+    els.output.innerHTML =
+      `<div class="empty">メールを診断しています...</div>`;
+
+    await sleep(100);
+
+    const result = await analyzeMail(
+      emailContext.maskedText,
+      els.literacy.value,
+      userAnswerText
+    );
+
+    const rawFlags = Array.isArray(result.flags) ? result.flags : [];
+    const resolved = [];
+
+    for (const flag of rawFlags) {
+      const resolvedFlag = resolveFlag(
+        emailContext.maskedText,
+        emailContext.tokenMap,
+        flag
+      );
+      if (resolvedFlag) resolved.push(resolvedFlag);
+    }
+
+    let beginnerResult = null;
+    if (isBeginner) {
+      const feedback = scoreUserMarks(resolved, userMarksSnapshot);
+      beginnerResult = { feedback, userMarks: userMarksSnapshot };
+    }
+
+    renderAnalysis(result, resolved, beginnerResult);
+
+    setStatus(
+      `診断完了`
+    );
+
+  } catch (err) {
+    console.error(err);
+    setStatus("診断エラー：" + err.message);
+    els.output.innerHTML = `
+      <div class="empty">
+        <strong>診断に失敗しました。</strong><br><br>
+        ${escapeHtml(err.message)}
+      </div>
+    `;
+  } finally {
+    els.analyzeBtn.disabled = false;
+    els.analyzeBtn.textContent = "診断";
+  }
+});
+
+</script>
+</body>
+</html>
